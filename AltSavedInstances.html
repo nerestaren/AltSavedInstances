@@ -8,6 +8,55 @@
         <link rel="stylesheet" href="css/bootstrap-icons.css">
     </head>
     <body>
+        <nav class="navbar navbar-expand-lg bd-navbar sticky-top bg-body-tertiary mb-3">
+            <div class="container-xxl bd-gutter flex-wrap flex-lg-nowrap" aria-label="Main navigation">
+                <a class="navbar-brand p-0 me-0 me-lg-2" href="#">
+                    Alt Saved Instances
+                </a>
+        
+                        <hr class="d-lg-none text-white-50">
+        
+                        <ul class="navbar-nav flex-row flex-wrap ms-md-auto">
+                            <li class="nav-item dropdown">
+                                <button
+                                    class="btn btn-link nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center"
+                                    id="bd-theme" type="button" aria-expanded="false" data-bs-toggle="dropdown"
+                                    data-bs-display="static" aria-label="Toggle theme (auto)">
+                                    <i class="bi bi-circle-half my-1 theme-icon-active"></i>
+                                    <span class="d-lg-none ms-2" id="bd-theme-text">Toggle theme</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme-text">
+                                    <li>
+                                        <button type="button" class="dropdown-item d-flex align-items-center"
+                                            data-bs-theme-value="light" aria-pressed="false">
+                                            <i class="bi bi-sun-fill me-2 opacity-50"></i>
+                                            Light
+                                            <i class="bi bi-check2 ms-auto d-none"></i>
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button type="button" class="dropdown-item d-flex align-items-center"
+                                            data-bs-theme-value="dark" aria-pressed="false">
+                                            <i class="bi bi-moon-stars-fill me-2 opacity-50"></i>
+                                            Dark
+                                            <i class="bi bi-check2 ms-auto d-none"></i>
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button type="button" class="dropdown-item d-flex align-items-center active"
+                                            data-bs-theme-value="auto" aria-pressed="true">
+                                            <i class="bi bi-circle-half me-2 opacity-50"></i>
+                                            Auto
+                                            <i class="bi bi-check2 ms-auto d-none"></i>
+                                        </button>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
         <main class="container">
             <div id="container">
 
@@ -15,6 +64,90 @@
             <button type="button" class="btn btn-primary" id="btnNewPanel"><i class="bi bi-plus"></i></button>
         </main>
         <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            /*!
+            * Color mode toggler for Bootstrap's docs (https://getbootstrap.com/)
+            * Copyright 2011-2023 The Bootstrap Authors
+            * Licensed under the Creative Commons Attribution 3.0 Unported License.
+            */
+
+            (() => {
+            'use strict'
+
+            const getStoredTheme = () => localStorage.getItem('theme')
+            const setStoredTheme = theme => localStorage.setItem('theme', theme)
+
+            const getPreferredTheme = () => {
+                const storedTheme = getStoredTheme()
+                if (storedTheme) {
+                return storedTheme
+                }
+
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+            }
+
+            const setTheme = theme => {
+                if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-bs-theme', 'dark')
+                } else {
+                document.documentElement.setAttribute('data-bs-theme', theme)
+                }
+            }
+
+            setTheme(getPreferredTheme())
+
+            const showActiveTheme = (theme, focus = false) => {
+                const themeSwitcher = document.querySelector('#bd-theme')
+
+                if (!themeSwitcher) {
+                return
+                }
+
+                const themeSwitcherText = document.querySelector('#bd-theme-text')
+                const activeThemeIcon = document.querySelector('i.theme-icon-active')
+                const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
+                // const svgOfActiveBtn = btnToActive.querySelector('i').getAttribute('href')
+                const activeIcon = [...btnToActive.querySelector('i').classList].find(i => i.startsWith('bi-'));
+
+                document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
+                element.classList.remove('active')
+                element.setAttribute('aria-pressed', 'false')
+                })
+
+                btnToActive.classList.add('active')
+                btnToActive.setAttribute('aria-pressed', 'true')
+                // activeThemeIcon.setAttribute('href', svgOfActiveBtn)
+                activeThemeIcon.className = `bi ${activeIcon} my-1 theme-icon-active`;
+                const themeSwitcherLabel = `${themeSwitcherText.textContent} (${btnToActive.dataset.bsThemeValue})`
+                themeSwitcher.setAttribute('aria-label', themeSwitcherLabel)
+
+                if (focus) {
+                themeSwitcher.focus()
+                }
+            }
+
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                const storedTheme = getStoredTheme()
+                if (storedTheme !== 'light' && storedTheme !== 'dark') {
+                setTheme(getPreferredTheme())
+                }
+            })
+
+            window.addEventListener('DOMContentLoaded', () => {
+                showActiveTheme(getPreferredTheme())
+
+                document.querySelectorAll('[data-bs-theme-value]')
+                .forEach(toggle => {
+                    toggle.addEventListener('click', () => {
+                    const theme = toggle.getAttribute('data-bs-theme-value')
+                    setStoredTheme(theme)
+                    setTheme(theme)
+                    showActiveTheme(theme, true)
+                    })
+                })
+            })
+            })()
+        </script>
         <script src="info.js"></script>
         <script src="data.js"></script>
         <script>
