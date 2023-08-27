@@ -1,0 +1,8 @@
+## Interface: 30300
+## Title: AltSavedInstances
+## Notes: Keeps track of the saved instances in all the accounts by an external program
+## Author: Minatoni
+## Version: 0.0.1
+## SavedVariablesPerCharacter: AltSavedInstances_DB
+
+Main.lua

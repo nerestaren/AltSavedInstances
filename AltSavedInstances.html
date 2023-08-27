@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Alt Saved Instances</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="css/bootstrap-icons.css">
+    </head>
+    <body>
+        <main class="container">
+            <div id="container">
+
+            </div>
+            <button type="button" class="btn btn-primary" id="btnNewPanel"><i class="bi bi-plus"></i></button>
+        </main>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script src="info.js"></script>
+        <script src="data.js"></script>
+        <script>
+            const INSTANCE_NAMES = {};
+
+            fixInfo();
+            parseData();
+
+            const container = document.getElementById('container');
+
+            const panels = JSON.parse(localStorage.getItem('AltSavedInstancesPanels')) ?? [];
+
+            if (panels.length == 0) {
+                createDefaultPanel();
+            }
+
+            panels.forEach(p => {
+                const element = document.createElement('div');
+                element.className = 'row';
+                container.appendChild(element);
+
+                p.element = element;
+
+                redraw(p);
+            });
+
+            document.getElementById('btnNewPanel').addEventListener('click', () => {
+                redraw(createDefaultPanel());
+            });
+
+            function fixInfo() {
+                let i = 0;
+                while (i < INSTANCE_DATA.length) {
+                    const instance = INSTANCE_DATA[i];
+
+                    INSTANCE_DATA.splice(i, 1, ...instance.sizes.map((size, i) => {
+                        let short;
+                        if (instance.sizes.length > 1 || instance.short == 'ToC') {
+                            if (instance.short == 'ToC' && instance.difficulties[i] >= 3) {
+                                short = 'ToGC' + size;
+                            } else {
+                                short = instance.short + size;
+                            }
+                        } else {
+                            short = instance.short;
+                        }
+                        
+                        const obj = {
+                            ...instance,
+                            short,
+                            difficulty: instance.difficulties[i],
+                            size,
+                        };
+                        delete obj.difficulties;
+                        delete obj.sizes;
+                        return obj;
+                    }));
+
+                    Object.keys(instance.name).forEach(locale => {
+                        INSTANCE_NAMES[instance.name[locale]] = instance.short;
+                    });
+
+                    i += instance.sizes.length;
+                }
+            }
+
+            function parseData() {
+                Object.keys(data).forEach(c => {
+                    data[c] = data[c].split('\n').map(r => {
+                        const values = r.split('\t');
+                        const name = values[0];
+                        const id = parseInt(values[1]);
+                        const reset = new Date(parseInt(values[2]) * 1000);
+                        const difficulty = parseInt(values[3]);
+                        const locked = values[4] === "true";
+                        const extended = values[5] === "true";
+                        const instanceIDMostSig = parseInt(values[6]);
+                        const isRaid = values[7] === "true";
+                        const maxPlayers = parseInt(values[8]);
+                        const difficultyName = values[9];
+                        const fullName = values[0] + ' ' + values[9];
+                        
+                        const instance = INSTANCE_DATA.find(i => (isRaid ? (i.type === 'raid') : (i.type === 'dungeon')) && i.difficulty === difficulty && i.size === maxPlayers && Object.values(i.name).includes(name));
+                        
+                        if (!instance) {
+                            console.error("Could not find instance ", {isRaid, difficulty, maxPlayers, name});
+                        }
+
+                        return {
+                            isRaid,
+                            difficulty,
+                            maxPlayers,
+                            reset,
+                            locked,
+                            fullName,
+                            instance
+                        }
+                    });
+                });
+            }
+
+            function createDefaultPanel() {
+                const element = document.createElement('div');
+                element.className = 'row';
+                container.appendChild(element);
+
+                const panel = {
+                    type: 'table',
+                    columns: INSTANCE_DATA.filter(i => i.type == 'raid' && i.expansion == 'WotLK').map(i => i.short),
+                    rows: Object.keys(data),
+                    title: 'Saved Instances',
+                    element: element
+                };
+
+                panels.push(panel);
+
+                savePanels();
+
+                return panel;
+            }
+
+            function redraw(panel) {
+                panel.element.textContent = '';
+
+                const title = document.createElement('h2');
+                title.textContent = panel.title;
+                panel.element.appendChild(title);
+
+                const now = new Date();
+
+                const settings = document.createElement('button');
+                settings.innerHTML = '<i class="bi bi-gear"></i>';
+                settings.className = 'btn btn-primary ms-2';
+                settings.addEventListener('click', function () {
+                    configure(panel);
+                });
+                title.appendChild(settings);
+
+                if (panel.type == 'list') {
+                    // redrawList(panel);
+                } else {
+                    const tableResponsive = document.createElement('div');
+                    tableResponsive.className = 'table-responsive';
+                    panel.element.appendChild(tableResponsive);
+                    
+                    const table = document.createElement('table');
+                    table.className = 'table';
+                    tableResponsive.appendChild(table);
+
+                    const thead = document.createElement('thead');
+                    table.appendChild(thead);
+
+                    const headtr = document.createElement('tr');
+                    thead.appendChild(headtr);
+
+                    const characterth = document.createElement('th');
+                    characterth.scope = 'column';
+                    // characterth.textContent = 'Character';
+                    headtr.appendChild(characterth);
+
+                    panel.columns.forEach(c => {
+                        const th = document.createElement('th');
+                        th.textContent = c;
+                        th.addEventListener('click', function (e) {
+                            if (e.ctrlKey) {
+                                panel.columns = panel.columns.filter(item => item != c);
+                            }
+                            savePanels();
+                            redraw(panel);
+                        });
+                        headtr.appendChild(th);
+                    });
+
+                    const tbody = document.createElement('tbody');
+                    table.appendChild(tbody);
+                    panel.rows.forEach(r => {
+                        const tr = document.createElement('tr');
+                        tbody.appendChild(tr);
+
+                        const charactertd = document.createElement('th');
+                        charactertd.scope = 'row';
+                        charactertd.textContent = r;
+                        charactertd.addEventListener('click', function (e) {
+                            if (e.ctrlKey) {
+                                panel.rows = panel.rows.filter(item => item != r);
+                            }
+                            savePanels();
+                            redraw(panel);
+                        });
+                        tr.appendChild(charactertd);
+
+                        panel.columns.forEach(c => {
+                            const td = document.createElement('td');
+                            const raidinfo = data[r].find(si => si.instance.short === c);
+                            if (raidinfo && raidinfo.locked) {
+                                td.textContent = datediff(raidinfo.reset, now);
+                                td.title = raidinfo.reset;
+                            } else {
+                                td.textContent = ' ';
+                            }
+                            tr.appendChild(td);
+                        });
+                    });
+                }
+            }
+
+            function datediff(d1, d2) {
+                let dif = d1.getTime() - d2.getTime();
+                if (dif >= 86400000) {
+                    return Math.trunc(dif / 86400000) + 'd';
+                } else if (dif >= 3600000) {
+                    return Math.trunc(dif / 3600000) + 'h';
+                } else if (dif >= 60000) {
+                    return Math.trunc(dif / 3600000) + 'm';
+                } else {
+                    return Math.trunc(dif / 1000) + 's';
+                }
+            }
+
+            function savePanels() {
+                localStorage.setItem('AltSavedInstancesPanels', JSON.stringify(panels));
+            }
+
+            function configure(panel) {
+
+                const tmp = {
+                    rows: Object.assign([], panel.rows),
+                    columns: Object.assign([], panel.columns),
+                    title: panel.title,
+                    type: panel.type,
+                };
+
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.tabIndex = -1;
+                document.body.appendChild(modal);
+
+                const modalDialog = document.createElement('div');
+                modalDialog.className = 'modal-dialog modal-lg modal-dialog-scrollable';
+                modal.appendChild(modalDialog);
+
+                const modalContent = document.createElement('div');
+                modalContent.className = 'modal-content';
+                modalDialog.appendChild(modalContent);
+
+                const modalHeader = document.createElement('div');
+                modalHeader.className = 'modal-header row';
+                modalContent.appendChild(modalHeader);
+
+                const modalTitle = document.createElement('h1');
+                modalTitle.className = 'modal-title fs-5 col-auto';
+                modalTitle.textContent = 'Configure ';
+                modalHeader.appendChild(modalTitle);
+
+                const modalTitleInputDiv = document.createElement('div');
+                modalTitleInputDiv.className = 'col-auto';
+                modalHeader.appendChild(modalTitleInputDiv);
+
+                const modalTitleInput = document.createElement('input');
+                modalTitleInput.className = 'form-control col-auto';
+                modalTitleInput.type = 'text';
+                modalTitleInput.placeholder = 'title';
+                modalTitleInput.value = panel.title;
+                modalTitleInput.addEventListener('change', e => {
+                    tmp.title = e.target.value;
+                });
+                modalTitleInputDiv.appendChild(modalTitleInput);
+
+                const modalDismiss = document.createElement('button');
+                modalDismiss.type = 'button';
+                modalDismiss.className = 'btn-close';
+                modalDismiss.dataset.bsDismiss = 'modal';
+                modalDismiss.setAttribute('aria-label', 'Close');
+                modalHeader.appendChild(modalDismiss);
+
+                const modalBody = document.createElement('div');
+                modalBody.className = 'modal-body';
+                modalContent.appendChild(modalBody);
+
+                const modalContainer = document.createElement('div');
+                modalContainer.className = 'container-fluid';
+                modalBody.appendChild(modalContainer);
+
+                const row = document.createElement('div');
+                row.className = 'row';
+                modalContainer.appendChild(row);
+
+                const rowscol = document.createElement('div');
+                rowscol.className = 'col-lg';
+                row.appendChild(rowscol);
+
+                const rowstitle = document.createElement('h2');
+                rowstitle.textContent = 'Rows';
+                rowstitle.className = 'fs-5';
+                rowscol.appendChild(rowstitle);
+
+                const rowsdropdown = document.createElement('span');
+                rowsdropdown.className = 'dropdown mx-2';
+                rowstitle.appendChild(rowsdropdown);
+
+                const rowsdropdownbtn = document.createElement('button');
+                rowsdropdownbtn.type = 'button';
+                rowsdropdownbtn.className = 'btn btn-primary btn-sm dropdown-toggle';
+                rowsdropdownbtn.dataset.bsToggle = 'dropdown';
+                rowsdropdownbtn.innerHTML = '<i class="bi bi-person-add"></i>';
+                rowsdropdown.appendChild(rowsdropdownbtn);
+
+                const rowsdropdownul = document.createElement('ul');
+                rowsdropdownul.className = 'dropdown-menu';
+                rowsdropdown.appendChild(rowsdropdownul);
+
+                Object.keys(data).forEach(r => {
+                    const li = document.createElement('li');
+                    rowsdropdownul.appendChild(li);
+                    const a = document.createElement('a');
+                    a.className = 'dropdown-item';
+                    a.href = '#';
+                    a.textContent = r;
+                    a.addEventListener('click', function(e) {
+                        tmp.rows.push(r);
+                        putRows();
+                        e.preventDefault();
+                    });
+                    li.appendChild(a);
+                });
+
+                const rows = document.createElement('ul');
+                rows.className = 'list-group';
+                rowscol.appendChild(rows);
+                function putRows() {
+                    rows.textContent = '';
+                    tmp.rows.forEach((r, i, a) => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        listItem.textContent = r;
+                        rows.appendChild(listItem);
+
+                        const buttons = document.createElement('span');
+                        buttons.className = 'btn-group btn-group-sm';
+                        buttons.role = 'group';
+                        listItem.appendChild(buttons);
+
+                        if (i > 0) {
+                            const btnUp = document.createElement('button');
+                            btnUp.className = 'btn btn-sm btn-warning';
+                            btnUp.innerHTML = '<i class="bi bi-arrow-up"></i>';
+                            btnUp.addEventListener('click', function(e) {
+                                const aux = a[i];
+                                a[i] = a[i - 1];
+                                a[i - 1] = aux;
+                                putRows();
+                            });
+                            buttons.appendChild(btnUp);
+                        }
+
+                        if (i < a.length - 1) {
+                            const btnDown = document.createElement('button');
+                            btnDown.className = 'btn btn-sm btn-warning';
+                            btnDown.innerHTML = '<i class="bi bi-arrow-down"></i>';
+                            btnDown.addEventListener('click', function(e) {
+                                const aux = a[i];
+                                a[i] = a[i + 1];
+                                a[i + 1] = aux;
+                                putRows();
+                            });
+                            buttons.appendChild(btnDown);
+                        }
+
+                        const btnRemove = document.createElement('button');
+                        btnRemove.className = 'btn btn-sm btn-danger';
+                        btnRemove.innerHTML = '<i class="bi bi-x"></i>';
+                        btnRemove.addEventListener('click', function(e) {
+                                a.splice(i, 1);
+                                putRows();
+                            });
+                        buttons.appendChild(btnRemove);
+                    });
+                }
+                putRows();
+
+                const colscol = document.createElement('div');
+                colscol.className = 'col-lg';
+                row.appendChild(colscol);
+
+                const colstitle = document.createElement('h2');
+                colstitle.textContent = 'Columns';
+                colstitle.className = 'fs-5';
+                colscol.appendChild(colstitle);
+
+                const colsbtngrp = document.createElement('span');
+                colsbtngrp.className = 'btn-group mx-2';
+                colsbtngrp.role = 'group';
+                colstitle.appendChild(colsbtngrp);
+
+                ['Classic', 'TBC', 'WotLK'].map(expansion => {
+                    const colsdropdown = document.createElement('span');
+                    colsdropdown.className = 'btn-group dropdown';
+                    colsbtngrp.appendChild(colsdropdown);
+
+                    const colsdropdownbtn = document.createElement('button');
+                    colsdropdownbtn.type = 'button';
+                    colsdropdownbtn.className = 'btn btn-primary btn-sm dropdown-toggle';
+                    colsdropdownbtn.dataset.bsToggle = 'dropdown';
+                    colsdropdownbtn.innerHTML = `<img src="img/${expansion}.webp">`;
+                    colsdropdown.appendChild(colsdropdownbtn);
+
+                    const colsdropdownul = document.createElement('ul');
+                    colsdropdownul.className = 'dropdown-menu';
+                    colsdropdown.appendChild(colsdropdownul);
+
+                    function addInstanceGroup(instances, label) {
+                        const li = document.createElement('li');
+                        colsdropdownul.appendChild(li);
+                        const a = document.createElement('a');
+                        a.className = 'dropdown-item';
+                        a.href = '#';
+                        a.textContent = label;
+                        a.addEventListener('click', function(e) {
+                            tmp.columns.push(...instances.map(i => i.short));
+                            putCols();
+                            e.preventDefault();
+                        });
+                        li.appendChild(a);
+                    }
+
+                    function addInstance(i) {
+                        const li = document.createElement('li');
+                        colsdropdownul.appendChild(li);
+                        const a = document.createElement('a');
+                        a.className = 'dropdown-item';
+                        a.href = '#';
+                        a.textContent = `${i.short} - ${i.name.enUS}`;
+                        a.addEventListener('click', function(e) {
+                            tmp.columns.push(i.short);
+                            putCols();
+                            e.preventDefault();
+                        });
+                        li.appendChild(a);
+                    }
+
+                    function addSeparator() {
+                        const li = document.createElement('li');
+                        colsdropdownul.appendChild(li);
+                        const hr = document.createElement('hr');
+                        hr.className = 'dropdown-divider';
+                        li.appendChild(hr);
+                    }
+
+                    switch (expansion) {
+                        case 'Classic': {
+                            const instances = INSTANCE_DATA.filter(i => i.expansion == expansion);
+                            addInstanceGroup(instances, 'Add all raids');
+                            addSeparator();
+                            instances.forEach(addInstance);
+                            break;
+                        } case 'TBC': {
+                            const instances = INSTANCE_DATA.filter(i => i.expansion == expansion);
+                            addInstanceGroup(instances, 'Add all instances');
+                            addInstanceGroup(instances.filter(i => i.type === 'raid'), 'Add all raids');
+                            addInstanceGroup(instances.filter(i => i.type === 'dungeon'), 'Add all heroic dungeons');
+                            addSeparator();
+                            instances.filter(i => i.type === 'raid').forEach(addInstance);
+                            addSeparator();
+                            instances.filter(i => i.type === 'dungeon').forEach(addInstance);
+                            break;
+                        } case 'WotLK': {
+                            const instances = INSTANCE_DATA.filter(i => i.expansion == expansion);
+                            addInstanceGroup(instances, 'Add all instances');
+                            addInstanceGroup(instances.filter(i => i.type === 'raid'), 'Add all raids');
+                            addInstanceGroup(instances.filter(i => i.type === 'raid' && i.size === 25), 'Add all 25-man raids');
+                            addInstanceGroup(instances.filter(i => i.type === 'raid' && i.size === 10), 'Add all 10-man raids');
+                            addInstanceGroup(instances.filter(i => i.type === 'dungeon'), 'Add all heroic dungeons');
+                            addSeparator();
+                            instances.filter(i => i.type === 'raid').forEach(addInstance);
+                            addSeparator();
+                            instances.filter(i => i.type === 'dungeon').forEach(addInstance);
+                            break;
+                        }
+                    }
+                });
+
+                const columns = document.createElement('div');
+                columns.className = 'list-group';
+                colscol.appendChild(columns);
+                function putCols() {
+                    columns.textContent = '';
+                    tmp.columns.forEach((r, i, a) => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        listItem.textContent = r;
+                        columns.appendChild(listItem);
+
+                        const buttons = document.createElement('span');
+                        buttons.className = 'btn-group btn-group-sm';
+                        buttons.role = 'group';
+                        listItem.appendChild(buttons);
+
+                        if (i > 0) {
+                            const btnUp = document.createElement('button');
+                            btnUp.className = 'btn btn-sm btn-warning';
+                            btnUp.innerHTML = '<i class="bi bi-arrow-up"></i>';
+                            btnUp.addEventListener('click', function(e) {
+                                const aux = a[i];
+                                a[i] = a[i - 1];
+                                a[i - 1] = aux;
+                                putCols();
+                            });
+                            buttons.appendChild(btnUp);
+                        }
+
+                        if (i < a.length - 1) {
+                            const btnDown = document.createElement('button');
+                            btnDown.className = 'btn btn-sm btn-warning';
+                            btnDown.innerHTML = '<i class="bi bi-arrow-down"></i>';
+                            btnDown.addEventListener('click', function(e) {
+                                const aux = a[i];
+                                a[i] = a[i + 1];
+                                a[i + 1] = aux;
+                                putCols();
+                            });
+                            buttons.appendChild(btnDown);
+                        }
+
+                        const btnRemove = document.createElement('button');
+                        btnRemove.className = 'btn btn-sm btn-danger';
+                        btnRemove.innerHTML = '<i class="bi bi-x"></i>';
+                        btnRemove.addEventListener('click', function(e) {
+                                a.splice(i, 1);
+                                putCols();
+                            });
+                        buttons.appendChild(btnRemove);
+                    });
+                }
+                putCols();
+
+                const modalFooter = document.createElement('div');
+                modalFooter.className = 'modal-footer';
+                modalContent.appendChild(modalFooter);
+
+                const myModal = new bootstrap.Modal(modal);
+                myModal.show();
+
+                modal.addEventListener('hidden.bs.modal', function () {
+                    myModal.dispose();
+                    document.body.removeChild(modal);
+                });
+
+                const modalClose = document.createElement('button');
+                modalClose.type = 'button';
+                modalClose.className = 'btn btn-secondary';
+                modalClose.dataset.bsDismiss = 'modal';
+                modalClose.textContent = 'Close';
+                modalFooter.appendChild(modalClose);
+
+                const modalRemove = document.createElement('button');
+                modalRemove.type = 'button';
+                modalRemove.className = 'btn btn-danger';
+                modalRemove.textContent = 'Remove';
+                modalRemove.addEventListener('click', function() {
+                    panels.splice(panels.findIndex(p => p == panel), 1);
+                    container.removeChild(panel.element);
+                    savePanels();
+                    myModal.hide();
+                });
+                modalFooter.appendChild(modalRemove);
+
+                const modalSave = document.createElement('button');
+                modalSave.type = 'button';
+                modalSave.className = 'btn btn-primary';
+                modalSave.textContent = 'Save';
+                modalSave.addEventListener('click', function() {
+                    panel.rows = tmp.rows;
+                    panel.columns = tmp.columns;
+                    panel.title = tmp.title;
+                    panel.type = tmp.type;
+                    redraw(panel);
+                    savePanels();
+                    myModal.hide();
+                });
+                modalFooter.appendChild(modalSave);
+            }
+        </script>
+    </body>
+</html>
