@@ -395,27 +395,24 @@
                 modalDialog.appendChild(modalContent);
 
                 const modalHeader = document.createElement('div');
-                modalHeader.className = 'modal-header row';
+                modalHeader.className = 'modal-header';
                 modalContent.appendChild(modalHeader);
 
                 const modalTitle = document.createElement('h1');
-                modalTitle.className = 'modal-title fs-5 col-auto';
+                modalTitle.className = 'modal-title fs-5';
                 modalTitle.textContent = 'Configure ';
                 modalHeader.appendChild(modalTitle);
 
-                const modalTitleInputDiv = document.createElement('div');
-                modalTitleInputDiv.className = 'col-auto';
-                modalHeader.appendChild(modalTitleInputDiv);
-
                 const modalTitleInput = document.createElement('input');
-                modalTitleInput.className = 'form-control col-auto';
+                modalTitleInput.className = 'form-control ms-2';
+                modalTitleInput.style.width = '200px';
                 modalTitleInput.type = 'text';
                 modalTitleInput.placeholder = 'title';
                 modalTitleInput.value = panel.title;
                 modalTitleInput.addEventListener('change', e => {
                     tmp.title = e.target.value;
                 });
-                modalTitleInputDiv.appendChild(modalTitleInput);
+                modalHeader.appendChild(modalTitleInput);
 
                 const modalDismiss = document.createElement('button');
                 modalDismiss.type = 'button';
