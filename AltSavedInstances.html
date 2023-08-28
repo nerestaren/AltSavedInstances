@@ -712,6 +712,62 @@
                 });
                 modalFooter.appendChild(modalRemove);
 
+                const updownGroup = document.createElement('div');
+                updownGroup.className = 'btn-group';
+                modalFooter.appendChild(updownGroup);
+
+                const upButton = document.createElement('button');
+                upButton.type = 'button';
+                upButton.className = 'btn btn-warning';
+                upButton.innerHTML = '<i class="bi bi-arrow-up"></i>'
+                upButton.addEventListener('click', function() {
+                    const indexInPanels = panels.findIndex(p => p == panel);
+                    panels[indexInPanels] = panels[indexInPanels - 1];
+                    panels[indexInPanels - 1] = panel;
+                    const aux = panels[indexInPanels].element;
+                    panels[indexInPanels].element = panels[indexInPanels - 1].element;
+                    panels[indexInPanels - 1].element = aux;
+                    redraw(panels[indexInPanels]);
+                    redraw(panels[indexInPanels - 1]);
+                    savePanels();
+                    reenableButtons();
+                });
+                updownGroup.appendChild(upButton);
+
+                const downButton = document.createElement('button');
+                downButton.type = 'button';
+                downButton.className = 'btn btn-warning';
+                downButton.innerHTML = '<i class="bi bi-arrow-down"></i>'
+                downButton.addEventListener('click', function() {
+                    const indexInPanels = panels.findIndex(p => p == panel);
+                    panels[indexInPanels] = panels[indexInPanels + 1];
+                    panels[indexInPanels + 1] = panel;
+                    const aux = panels[indexInPanels].element;
+                    panels[indexInPanels].element = panels[indexInPanels + 1].element;
+                    panels[indexInPanels + 1].element = aux;
+                    redraw(panels[indexInPanels]);
+                    redraw(panels[indexInPanels + 1]);
+                    savePanels();
+                    reenableButtons();
+                });
+                updownGroup.appendChild(downButton);
+
+                function reenableButtons() {
+                    const indexInPanels = panels.findIndex(p => p == panel);
+                    if (indexInPanels > 0) {
+                        upButton.removeAttribute('disabled');
+                    } else {
+                        upButton.setAttribute('disabled', '');
+                    }
+                    if (indexInPanels < panels.length - 1) {
+                        downButton.removeAttribute('disabled');
+                    } else {
+                        downButton.setAttribute('disabled', '');
+                    }
+                }
+
+                reenableButtons();
+
                 const modalSave = document.createElement('button');
                 modalSave.type = 'button';
                 modalSave.className = 'btn btn-primary';
