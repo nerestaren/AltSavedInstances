@@ -343,10 +343,11 @@
                             const td = document.createElement('td');
                             const raidinfo = data[r].find(si => si.instance.short === c);
                             if (raidinfo && raidinfo.locked) {
-                                td.textContent = datediff(raidinfo.reset, now);
-                                td.title = raidinfo.reset;
+                                td.innerHTML = `<i class="bi bi-x-circle text-danger-emphasis"></i> <span style="font-size: 80%">${datediff(raidinfo.reset, now)}</span>`;
+                                td.title = datediff(raidinfo.reset, now);
+                                // td.title = raidinfo.reset;
                             } else {
-                                td.textContent = ' ';
+                                td.innerHTML = '<i class="bi bi-circle text-success-emphasis"></i>';
                             }
                             tr.appendChild(td);
                         });
