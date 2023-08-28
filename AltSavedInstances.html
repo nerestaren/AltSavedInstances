@@ -271,12 +271,11 @@
 
             function redraw(panel) {
                 panel.element.textContent = '';
+                const now = new Date();
 
-                const title = document.createElement('h2');
+                /*const title = document.createElement('h2');
                 title.textContent = panel.title;
                 panel.element.appendChild(title);
-
-                const now = new Date();
 
                 const settings = document.createElement('button');
                 settings.innerHTML = '<i class="bi bi-gear"></i>';
@@ -284,7 +283,7 @@
                 settings.addEventListener('click', function () {
                     configure(panel);
                 });
-                title.appendChild(settings);
+                title.appendChild(settings);*/
 
                 if (panel.type == 'list') {
                     // redrawList(panel);
@@ -303,10 +302,23 @@
                     const headtr = document.createElement('tr');
                     thead.appendChild(headtr);
 
-                    const characterth = document.createElement('th');
-                    characterth.scope = 'column';
+                    const firstth = document.createElement('th');
+                    firstth.scope = 'column';
                     // characterth.textContent = 'Character';
-                    headtr.appendChild(characterth);
+                    headtr.appendChild(firstth);
+
+                    const title = document.createElement('span');
+                    title.textContent = panel.title;
+                    firstth.appendChild(title);
+
+                    const settings = document.createElement('button');
+                    settings.innerHTML = '<i class="bi bi-gear"></i>';
+                    settings.style = '--bs-btn-padding-y: 0; --bs-btn-padding-x: 2px; font-size: 85%';
+                    settings.className = 'btn btn-sm btn-primary ms-2';
+                    settings.addEventListener('click', function () {
+                        configure(panel);
+                    });
+                    title.appendChild(settings);
 
                     panel.columns.forEach(c => {
                         const th = document.createElement('th');
