@@ -6,6 +6,10 @@ Compatible with World of Warcraft 3.3.5a. Tested on Warmane private server.
 
 # Installation
 
+Download the source code or a release.
+
+Unzip as `AltSavedInstances`.
+
 Install like any other addon. Consider creating a shortcut to `AltSavedInstances.bat` into your desktop.
 
 # Use
