@@ -216,7 +216,7 @@
 
             function parseData() {
                 Object.keys(data).forEach(c => {
-                    data[c] = data[c].split('\n').map(r => {
+                    data[c] = data[c].split('\n').filter(x => x !== '').map(r => {
                         const values = r.split('\t');
                         const name = values[0];
                         const id = parseInt(values[1]);
