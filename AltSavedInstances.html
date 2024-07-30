@@ -354,7 +354,7 @@
 
                         panel.columns.forEach(c => {
                             const td = document.createElement('td');
-                            const raidinfo = data[r].find(si => si.instance.short === c);
+                            const raidinfo = data[r]?.find(si => si.instance.short === c);
                             if (raidinfo && raidinfo.locked && raidinfo.reset > now) {
                                 td.innerHTML = `<i class="bi bi-x-circle text-danger-emphasis"></i> <span style="font-size: 80%">${datediff(raidinfo.reset, now)}</span>`;
                                 td.title = datediff(raidinfo.reset, now);
